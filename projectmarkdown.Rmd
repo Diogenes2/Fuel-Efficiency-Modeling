@@ -1,0 +1,86 @@
+---
+title: "Transmissions and Fuel Efficiency"
+author: "Benjamin Milks"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview of the Data and Project
+
+I looked at a data set mtcars and learned about the MPG in manual and automatic transmissions. I used many different models and ran an anova test. The T value for manual transmission is not high enough to conclude there is a difference between the two transmission types when other factors are held constant. The estimated difference is 1.8 MPG, but the t value was .206 which prevents us from having a claim of better fuel efficiency. To explore this further I would recommend data for new cars and a understanding of cars enough to know how to understand and quantify the outliers. 
+
+
+```{r}
+head(mtcars)
+```
+
+### Initial Plots to Explore
+
+```{r}
+cor(mtcars$mpg, mtcars[-1])
+mtcars$am <- factor(mtcars$am, labels = c("Automatic", "Manual"))
+boxplot(mpg ~ am, data = mtcars, ylab = "MPG", main = "Boxplot of MPG comparing transmission types")
+```
+
+We can see the mean mpg is higher for manual transmissions, but we can have models help us see if there are any other factors at work.
+
+### Making the Data Functional
+
+```{r, echo=TRUE}
+mtcars$cyl <- factor(mtcars$cyl, labels = c("4 cyl", "6 cyl", "8 cyl"))
+mtcars$vs <- factor(mtcars$vs, labels = c("V engine", "Straight engine"))
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+
+        
+```
+I changed the data that were whole numbers into different factors so R wouldn't think it is continuous data.
+
+## Initial Model
+```{r, echo=TRUE}
+simplemodel <- lm(mpg ~ am, data = mtcars)
+summary(simplemodel)
+
+        
+```
+Here it appears that manual transmission is siginificantly better, but this is only factoring in transmission type. It is ignoring factors like weight and horse power, which could make the plot misleading.
+
+##Looking Further
+
+```{r, echo=TRUE}
+allvarsmodel <- lm (mpg ~ ., data = mtcars)
+summary(allvarsmodel)
+fit1 <- lm(mpg ~ am -1, data = mtcars)
+fit2 <- lm(mpg ~ am + cyl -1, data = mtcars)
+fit3 <- lm(mpg ~ am + cyl +  wt -1, data = mtcars)
+fit4 <- lm(mpg ~ am + cyl + wt + hp -1, data = mtcars)
+fit5 <- lm(mpg ~ am + cyl +  wt + hp + vs -1, data = mtcars)
+anova(fit1, fit2, fit3, fit4, fit5)
+        
+```
+The model gets better as the fit number gets higher. This is until fit 5 where it loses its significance code. I should not include V engine/Straight engine.
+
+```{r, echo=TRUE}
+summary(fit4)
+sum(resid(fit4))
+confint(fit4)
+```
+The sum of residuals is close to zero, which is a good sign for the model.
+Now I want to see the model with the intercept.
+```{r, echo=TRUE}
+
+modelwithintercept <- lm(mpg ~ am + cyl + wt + hp, data = mtcars)
+summary(modelwithintercept)
+```
+
+
+
+
+# Extra Figures 
+```{r, echo=TRUE}
+par(mfcol=c(2,2))
+plot(fit4)
+```
